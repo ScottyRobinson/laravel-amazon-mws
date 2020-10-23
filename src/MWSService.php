@@ -9,6 +9,11 @@ class MWSService
         $this->mwsClient = $mwsClient ?: new MWSClient();
     }
 
+    public function products()
+    {
+        return new MWSProducts($this->mwsClient);
+    }
+
     public function orders()
     {
         return new MWSOrders($this->mwsClient);

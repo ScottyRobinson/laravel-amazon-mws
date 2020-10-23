@@ -69,7 +69,7 @@ class MWSClient
         $this->secretKey = config('amazon-mws.secret_key');
         $this->sellerId = config('amazon-mws.seller_id');
         $this->mwsAuthToken = config('amazon-mws.mws_auth_token') ?: null;
-        $this->marketPlaces = explode(',', config('amazon-mws.default_market_place') ?: 'DE');
+        $this->marketPlaces = explode(',', config('amazon-mws.default_market_place') ?: 'GB');
         $this->client = $client ?: new Client(['timeout'  => 60]);
     }
 
@@ -182,9 +182,14 @@ class MWSClient
             'query' => $this->getQuery($path, $action, $version, $params),
         ];
 
+        $replace = [
+            '</ns2:ItemAttributes>' => '</ItemAttributes>',
+        ];
+        $replace['ns2:'] = '';
+
         $uri = 'https://'.$this->getDomain().$path;
         $response = $this->client->post($uri, $requestOptions);
-        $xmlResponse = simplexml_load_string($response->getBody()->getContents());
+        $xmlResponse = simplexml_load_string(strtr($response->getBody()->getContents(), $replace));
         $json = json_encode($xmlResponse);
 
         return json_decode($json, true);
@@ -202,7 +207,11 @@ class MWSClient
             'SignatureVersion' => $this->getSignatureVersion(),
             'Version' => $version,
         ];
-        $queryParameters = array_merge($queryParameters, $this->getMarketPlaceParams());
+
+        if ($action !== 'GetMatchingProductForId') {
+            $queryParameters = array_merge($queryParameters, $this->getMarketPlaceParams());
+        }
+
         $queryParameters = array_merge($queryParameters, $params);
         ksort($queryParameters);
 

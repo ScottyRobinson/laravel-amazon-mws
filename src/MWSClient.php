@@ -172,7 +172,7 @@ class MWSClient
             $headers['Content-Type'] = 'text/xml; charset=iso-8859-1';
         }
 
-        if ($action === 'GetFeedSubmissionResult') {
+        if ($action === 'GetFeedSubmissionResult' || $action === 'GetReport') {
             $headers['Content-Type'] = 'x-www-form-urlencoded';
         }
 
@@ -183,12 +183,17 @@ class MWSClient
         ];
 
         $replace = [
-            '</ns2:ItemAttributes>' => '</ItemAttributes>',
+            '</ns2:ItemAttributes>' => '</ItemAttributes>'
         ];
         $replace['ns2:'] = '';
 
         $uri = 'https://'.$this->getDomain().$path;
         $response = $this->client->post($uri, $requestOptions);
+
+        if ($action === 'GetReport') {
+            return $response->getBody()->getContents();
+        }
+
         $xmlResponse = simplexml_load_string(strtr($response->getBody()->getContents(), $replace));
         $json = json_encode($xmlResponse);
 

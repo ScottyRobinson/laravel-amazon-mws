@@ -208,7 +208,13 @@ class MWSClient
             'Version' => $version,
         ];
 
-        if ($action !== 'GetMatchingProductForId') {
+        if (! in_array(
+            $action,
+            array(
+                'GetMatchingProductForId',
+                'GetMyPriceForASIN'
+            )
+        )) {
             $queryParameters = array_merge($queryParameters, $this->getMarketPlaceParams());
         }
 

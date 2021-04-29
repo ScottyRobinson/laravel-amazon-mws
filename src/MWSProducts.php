@@ -2,6 +2,8 @@
 
 namespace Looxis\LaravelAmazonMWS;
 
+use Looxis\LaravelAmazonMWS\MWSClient;
+
 class MWSProducts
 {
     const VERSION = '2011-10-01';
@@ -11,20 +13,6 @@ class MWSProducts
     public function __construct(MWSClient $client)
     {
         $this->client = $client;
-    }
-
-    public function list($params = [])
-    {
-        $nextToken = data_get($params, 'NextToken');
-        $action = 'ListOrders';
-
-        if ($nextToken) {
-            $action = 'ListOrdersByNextToken';
-        }
-
-        $response = $this->client->post($action, '/Orders/'.self::VERSION, self::VERSION, $params);
-
-        return $this->parseResponse($response, $action.'Result', 'Orders.Order');
     }
 
     public function get($ids)
@@ -42,7 +30,31 @@ class MWSProducts
 
         $response = $this->client->post('GetMatchingProductForId', '/Products/'.self::VERSION, self::VERSION, $params);
 
-        return $this->parseResponse($response, 'GetMatchingProductForIdResult', 'Products.Product');
+        $dataName = 'Products.Product';
+        if (count($ids) > 1) {
+            $dataName = '*.Products.Product';
+        }
+
+        return $this->parseResponse($response, 'GetMatchingProductForIdResult', $dataName);
+    }
+
+    public function getMyPrice($ids)
+    {
+        $ids = is_array($ids) ? $ids : func_get_args();
+        $params = [];
+
+        foreach ($ids as $key => $id) {
+            $keyName = 'ASINList.ASIN.'.($key + 1);
+            $params[$keyName] = $id;
+        }
+
+        $params['MarketplaceId'] = 'A1F83G8C2ARO7P';
+
+        $response = $this->client->post('GetMyPriceForASIN', '/Products/'.self::VERSION, self::VERSION, $params);
+
+        $dataName = '*.Product.Offers';
+
+        return $this->parseResponse($response, 'GetMyPriceForASINResult', $dataName);
     }
 
     public function parseResponse($response, $resultTypeName, $dataName)
